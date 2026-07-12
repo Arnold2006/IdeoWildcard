@@ -8,7 +8,7 @@ try:
 except ImportError:  # allow loading outside ComfyUI (tests, linting)
     torch = None
 
-TOKEN_PATTERN = re.compile(r"^__([A-Za-z0-9._-]+)__$")
+TOKEN_PATTERN = re.compile(r"__([A-Za-z0-9._-]+)__")
 
 
 class IdeogramWildcardNode:
@@ -48,22 +48,21 @@ class IdeogramWildcardNode:
         return value
 
     def _resolve_token(self, value, rng, cache):
-        match = TOKEN_PATTERN.fullmatch(value)
-        if not match:
-            return value
+        def _replace(match):
+            token_name = match.group(1)
+            if token_name not in cache:
+                cache[token_name] = self._load_wildcard_options(token_name)
 
-        token_name = match.group(1)
-        if token_name not in cache:
-            cache[token_name] = self._load_wildcard_options(token_name)
+            options = cache[token_name]
+            if not options:
+                print(
+                    f"[IdeogramWildcardNode] Warning: no wildcard entries available for '{token_name}'."
+                )
+                return match.group(0)
 
-        options = cache[token_name]
-        if not options:
-            print(
-                f"[IdeogramWildcardNode] Warning: no wildcard entries available for '{token_name}'."
-            )
-            return value
+            return rng.choice(options)
 
-        return rng.choice(options)
+        return TOKEN_PATTERN.sub(_replace, value)
 
     def _load_wildcard_options(self, token_name):
         wildcard_path = self.WILDCARDS_DIR / f"{token_name}.txt"
