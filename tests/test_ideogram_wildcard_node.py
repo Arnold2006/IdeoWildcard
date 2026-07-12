@@ -61,6 +61,33 @@ class IdeogramWildcardNodeTests(unittest.TestCase):
         self.assertEqual(json.loads(result)["background"], "__background__")
         self.assertIn("wildcard file not found", stdout.getvalue())
 
+    def test_inline_wildcard_token_in_larger_string(self):
+        """Tokens embedded in a larger string should be replaced inline."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            wildcard_dir = Path(temp_dir)
+            (wildcard_dir / "bw-portrait.txt").write_text(
+                "black and white portrait\nmonochrome headshot\n",
+                encoding="utf-8",
+            )
+
+            prompt = json.dumps(
+                {
+                    "photo": "__bw-portrait__, 85mm, f/1.4, shallow depth of field",
+                }
+            )
+
+            with patch.object(IdeogramWildcardNode, "WILDCARDS_DIR", wildcard_dir):
+                result, = IdeogramWildcardNode().resolve(prompt, 42)
+
+            resolved = json.loads(result)
+            # The token should be replaced but the rest of the string preserved
+            self.assertNotIn("__bw-portrait__", resolved["photo"])
+            self.assertIn("85mm", resolved["photo"])
+            self.assertTrue(
+                resolved["photo"].startswith("black and white portrait,")
+                or resolved["photo"].startswith("monochrome headshot,")
+            )
+
 
 class IdeogramWildcardCLIPEncodeTests(unittest.TestCase):
     def test_encode_resolves_wildcards_and_returns_conditioning(self):
