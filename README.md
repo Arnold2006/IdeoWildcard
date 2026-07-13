@@ -1,6 +1,6 @@
 # IdeoWildcard
 
-ComfyUI custom node for resolving `__token__` wildcard values inside an Ideogram4 JSON prompt.
+ComfyUI CLIP encoder node that resolves `__token__` wildcard values inside an Ideogram4 JSON prompt and encodes the result into CONDITIONING for direct use with samplers.
 
 ## Installation
 
@@ -19,18 +19,44 @@ ComfyUI/custom_nodes/IdeoWildcard
 
 Restart ComfyUI after cloning.
 
-## Node
+## Nodes
+
+### Ideogram Wildcard CLIP Encode (primary)
+
+- **Class:** `IdeogramWildcardCLIPEncode`
+- **Display name:** `Ideogram Wildcard CLIP Encode`
+- **Category:** `Ideogram`
+
+Resolves wildcard tokens in a JSON prompt and encodes the resolved text with a CLIP model, producing CONDITIONING output that can be wired directly into a sampler.
+
+#### Inputs
+
+- `clip` (`CLIP`): the CLIP model used for text encoding
+- `prompt` (`STRING`, multiline): raw JSON prompt text containing wildcard tokens
+
+#### Outputs
+
+- `conditioning` (`CONDITIONING`): encoded conditioning ready for a sampler
+- `decoded_prompt` (`STRING`): the resolved JSON prompt text (useful for debugging)
+
+> **Note:** This node re-executes on every queue run to produce a fresh random wildcard selection (no seed control).
+
+---
+
+### Ideogram Wildcard Prompt (legacy)
 
 - **Class:** `IdeogramWildcardNode`
 - **Display name:** `Ideogram Wildcard Prompt`
 - **Category:** `Ideogram`
 
-### Inputs
+Resolves wildcard tokens and outputs the resolved JSON string without CLIP encoding.
+
+#### Inputs
 
 - `prompt` (`STRING`, multiline): raw JSON prompt text
 - `seed` (`INT`): seed used for reproducible random line selection
 
-### Output
+#### Output
 
 - `STRING`: the JSON prompt with any wildcard tokens resolved
 
